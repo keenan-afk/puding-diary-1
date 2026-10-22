@@ -33,41 +33,44 @@
      ========================================================================== */
 
   /**
-   * Generates a classic fluted/grooved bundt-style chocolate pudding mesh.
+   * Generates a completely solid, fluted chocolate pudding mesh with a continuous smooth chocolate crown.
+   * Eliminates any sunken hole or culling artifacts so the entire top is 100% rich chocolate pudding.
    */
   function createPuddingGeometry() {
-    const stacks = 40;
+    const stacks = 52;
     const slices = 64;
-    const height = 2.3;
     const flutes = 16;
-    const fluteAmp = 0.09;
+    const fluteAmp = 0.085;
 
     const vertices = [];
     const indices = [];
     const uvs = [];
 
-    // Construct grid of vertices
+    // Construct continuous grid from base (v=0) to top center dome (v=1)
     for (let i = 0; i <= stacks; i++) {
       const v = i / stacks;
-      const y = v * height;
 
-      // Profile curve: wide at base (v=0), curves gently inwards, rounds over at top (v=1)
-      let r;
-      if (v < 0.85) {
-        // Main sloping wall
-        r = 2.4 - 0.7 * Math.pow(v / 0.85, 0.9);
+      let r, y, fluteFade;
+
+      if (v <= 0.65) {
+        // Main fluted side wall sloping gracefully inward
+        const t = v / 0.65;
+        y = t * 1.85;
+        r = 2.40 - 0.65 * Math.pow(t, 0.88); // 2.40 tapering to 1.75
+        fluteFade = 0.25 + 0.75 * Math.sin(t * Math.PI * 0.95);
       } else {
-        // Rounded crown top curving into center dip
-        const topT = (v - 0.85) / 0.15;
-        r = 1.7 - 0.9 * Math.sin(topT * Math.PI * 0.5);
+        // Continuous, smooth solid chocolate crown & dome all the way to center peak
+        const t = (v - 0.65) / 0.35; // 0 to 1
+        const angle = t * (Math.PI * 0.5); // 0 to PI/2
+        r = 1.75 * Math.cos(angle); // 1.75 down to exactly 0 at apex
+        y = 1.85 + 0.40 * Math.sin(angle); // 1.85 up to 2.25 at peak
+        fluteFade = Math.pow(Math.cos(angle), 2.2); // Flutes smoothly dissolve into silky chocolate top
       }
 
       for (let j = 0; j <= slices; j++) {
         const u = j / slices;
         const theta = u * Math.PI * 2;
 
-        // Apply sinusoidal fluting along perimeter, tapering at the very base and very top
-        const fluteFade = Math.sin(v * Math.PI);
         const fluteOffset = 1 + fluteAmp * fluteFade * Math.cos(flutes * theta);
         const curR = r * fluteOffset;
 
@@ -79,28 +82,27 @@
       }
     }
 
-    // Connect faces
+    // Connect faces with consistent outward-pointing normals
     for (let i = 0; i < stacks; i++) {
-      for (let j = 0; j < slices; j++) {
-        const first = i * (slices + 1) + j;
-        const second = first + slices + 1;
+      if (i === stacks - 1) {
+        // Top converging apex row (single triangle fan per slice, no degenerate quads)
+        for (let j = 0; j < slices; j++) {
+          const first = i * (slices + 1) + j;
+          const apex = first + slices + 1;
+          indices.push(first, apex, first + 1);
+        }
+      } else {
+        for (let j = 0; j < slices; j++) {
+          const first = i * (slices + 1) + j;
+          const second = first + slices + 1;
 
-        indices.push(first, second, first + 1);
-        indices.push(second, second + 1, first + 1);
+          indices.push(first, second, first + 1);
+          indices.push(second, second + 1, first + 1);
+        }
       }
     }
 
-    // Add top center dip disc cap to seal the pudding smoothly
-    const capCenterIndex = vertices.length / 3;
-    vertices.push(0, height - 0.22, 0); // slight sunken center
-    uvs.push(0.5, 0.5);
-
-    const topStackStart = stacks * (slices + 1);
-    for (let j = 0; j < slices; j++) {
-      indices.push(topStackStart + j, topStackStart + j + 1, capCenterIndex);
-    }
-
-    // Add flat bottom base cap
+    // Add flat bottom base cap (seals underside against plate)
     const baseCenterIndex = vertices.length / 3;
     vertices.push(0, 0, 0);
     uvs.push(0.5, 0.5);
@@ -117,40 +119,73 @@
   }
 
   /**
-   * Creates a single organic curved petal geometry.
+   * Generates a beautifully smooth, organic, curved petal geometry with realistic cupping.
+   * @param {number} width - Maximum half-width of the petal
+   * @param {number} length - Total length from base to tip
+   * @param {number} cupFactor - Transverse curvature (spoon-like concavity)
+   * @param {number} curlFactor - Longitudinal arching (curl backward)
+   * @param {boolean} isNotched - If true, gives a subtle heart-notch at the tip (for Sakura)
    */
-  function createPetalGeometry(width, length, curveFactor) {
-    const segmentsX = 8;
-    const segmentsY = 10;
+  function createPetalGeometry(width, length, cupFactor, curlFactor, isNotched = false) {
+    const segU = 14; // across petal width
+    const segV = 16; // along petal length
     const vertices = [];
     const indices = [];
     const uvs = [];
 
-    for (let i = 0; i <= segmentsY; i++) {
-      const v = i / segmentsY;
-      const y = v * length;
+    for (let i = 0; i <= segV; i++) {
+      const v = i / segV; // 0 (base) to 1 (tip)
 
-      // Petal profile width: narrow at base, wider at 60%, tapering to tip
-      const w = width * Math.sin(v * Math.PI * 0.95) * (1 - 0.2 * v);
+      // Natural botanical width profile: starts at 0, widens into rounded belly, tapers smoothly
+      let profile;
+      if (isNotched) {
+        // Sakura petal: broad spade shape with heart-notched tip
+        profile = Math.sin(Math.pow(v, 0.72) * Math.PI);
+        if (v > 0.8) {
+          profile *= 1.06;
+        }
+      } else {
+        // Rose / Daisy / Leaf petal: smooth teardrop / oval
+        profile = Math.sin(v * Math.PI) * (1 + 0.35 * Math.sin(v * Math.PI * 0.5));
+      }
 
-      for (let j = 0; j <= segmentsX; j++) {
-        const u = j / segmentsX;
-        const x = (u - 0.5) * 2 * w;
+      const curWidth = width * Math.max(0, profile);
 
-        // Cup curvature + curling tip
-        const cup = (1 - Math.pow((u - 0.5) * 2, 2)) * curveFactor * (0.2 + 0.8 * v);
-        const tipCurl = -0.15 * Math.pow(v, 3);
-        const z = cup + tipCurl;
+      for (let j = 0; j <= segU; j++) {
+        const u = j / segU;
+        const uNorm = (u - 0.5) * 2; // -1 to +1
+
+        let x = uNorm * curWidth;
+        let y = v * length;
+
+        // Sakura heart notch at the tip
+        if (isNotched && v > 0.75) {
+          const notchDepth = 0.16 * length * Math.pow((v - 0.75) / 0.25, 2);
+          const notchShape = Math.exp(-Math.pow(uNorm * 3.2, 2));
+          y -= notchDepth * notchShape;
+        }
+
+        // 1. Transverse cupping (spoon curvature across the petal)
+        const cup = (1 - uNorm * uNorm) * cupFactor * Math.sin(v * Math.PI);
+
+        // 2. Longitudinal arching (curving outward along petal length)
+        const arch = -curlFactor * Math.pow(v, 1.85);
+
+        // 3. Subtle edge lip curl for soft realistic petal feel
+        const lipCurl = 0.08 * curlFactor * Math.pow(v, 2.5) * (uNorm * uNorm);
+
+        const z = cup + arch + lipCurl;
 
         vertices.push(x, y, z);
         uvs.push(u, v);
       }
     }
 
-    for (let i = 0; i < segmentsY; i++) {
-      for (let j = 0; j < segmentsX; j++) {
-        const a = i * (segmentsX + 1) + j;
-        const b = a + segmentsX + 1;
+    // Connect faces
+    for (let i = 0; i < segV; i++) {
+      for (let j = 0; j < segU; j++) {
+        const a = i * (segU + 1) + j;
+        const b = a + segU + 1;
         indices.push(a, b, a + 1);
         indices.push(b, b + 1, a + 1);
       }
@@ -165,100 +200,139 @@
   }
 
   /**
-   * PROCEDURAL FLOWER BUILDERS
+   * PROCEDURAL FLOWER BUILDERS (REALISTIC, SMOOTH, BOTANICAL ART)
+   */
+
+  /**
+   * Builds an exquisite, full-blooming layered Rose with natural spiral whorls and calyx base.
    */
   function buildRose(colorHex) {
     const group = new THREE.Group();
     const petalColor = new THREE.Color(colorHex);
-
-    // Deepen inner tone for realistic petal translucency
-    const innerColor = petalColor.clone().offsetHSL(0, 0.08, -0.12);
+    // Deeper inner tone for natural petal depth & translucency
+    const innerColor = petalColor.clone().offsetHSL(0, 0.06, -0.10);
 
     const outerMat = new THREE.MeshPhysicalMaterial({
       color: petalColor,
-      roughness: 0.35,
-      clearcoat: 0.35,
-      clearcoatRoughness: 0.15,
+      roughness: 0.28,
+      clearcoat: 0.65,
+      clearcoatRoughness: 0.12,
       side: THREE.DoubleSide
     });
 
     const innerMat = outerMat.clone();
     innerMat.color = innerColor;
 
-    // Layer 1: Tight inner bud (3-4 spiral petals)
-    const innerGeom = createPetalGeometry(0.25, 0.45, 0.12);
-    for (let i = 0; i < 4; i++) {
-      const angle = (i * Math.PI * 2) / 4 + Math.random() * 0.15;
-      const petal = new THREE.Mesh(innerGeom, innerMat);
-      petal.rotation.y = angle;
-      petal.rotation.x = 0.25;
-      petal.position.set(Math.cos(angle) * 0.04, 0.05, Math.sin(angle) * 0.04);
-      group.add(petal);
-    }
+    // Green calyx base so the rose sits naturally against the pudding
+    const calyxMat = new THREE.MeshStandardMaterial({ color: 0x385E28, roughness: 0.45 });
+    const calyxGeom = new THREE.CylinderGeometry(0.18, 0.08, 0.08, 12);
+    const calyx = new THREE.Mesh(calyxGeom, calyxMat);
+    calyx.position.y = 0.02;
+    group.add(calyx);
 
-    // Layer 2: Middle whorl (5 petals)
-    const midGeom = createPetalGeometry(0.38, 0.6, 0.16);
+    // 5 small green sepals peaking under the flower
+    const sepalGeom = createPetalGeometry(0.10, 0.35, 0.06, 0.12);
     for (let i = 0; i < 5; i++) {
-      const angle = (i * Math.PI * 2) / 5 + 0.3 + Math.random() * 0.15;
-      const petal = new THREE.Mesh(midGeom, outerMat);
-      petal.rotation.y = angle;
-      petal.rotation.x = 0.55 + Math.random() * 0.1;
-      petal.position.set(Math.cos(angle) * 0.12, 0.04, Math.sin(angle) * 0.12);
+      const angle = (i * Math.PI * 2) / 5;
+      const sepal = new THREE.Mesh(sepalGeom, calyxMat);
+      sepal.rotation.y = angle;
+      sepal.rotation.x = Math.PI * 0.48; // flat against pudding surface
+      sepal.position.set(Math.cos(angle) * 0.12, 0.03, Math.sin(angle) * 0.12);
+      group.add(sepal);
+    }
+
+    // Central rounded bud core
+    const budGeom = new THREE.SphereGeometry(0.12, 16, 12);
+    const bud = new THREE.Mesh(budGeom, innerMat);
+    bud.scale.set(0.9, 1.2, 0.9);
+    bud.position.y = 0.12;
+    group.add(bud);
+
+    // Layer 1: Tight spiral inner bud petals (3 petals wrapping around bud)
+    const innerPetalGeom = createPetalGeometry(0.24, 0.45, 0.20, 0.06);
+    for (let i = 0; i < 3; i++) {
+      const angle = (i * Math.PI * 2) / 3;
+      const petal = new THREE.Mesh(innerPetalGeom, innerMat);
+      petal.rotation.y = angle + 0.2;
+      petal.rotation.x = 0.22; // upright, hugging the bud
+      petal.position.set(Math.cos(angle) * 0.05, 0.06, Math.sin(angle) * 0.05);
       group.add(petal);
     }
 
-    // Layer 3: Outer blooming petals (7 petals)
-    const outerGeom = createPetalGeometry(0.5, 0.75, 0.22);
+    // Layer 2: Middle whorl (5 cupped petals, interleaving)
+    const midPetalGeom = createPetalGeometry(0.35, 0.60, 0.24, 0.16);
+    for (let i = 0; i < 5; i++) {
+      const angle = (i * Math.PI * 2) / 5 + 0.35;
+      const petal = new THREE.Mesh(midPetalGeom, outerMat);
+      petal.rotation.y = angle;
+      petal.rotation.x = 0.52; // opening outward at ~30 deg
+      petal.position.set(Math.cos(angle) * 0.12, 0.05, Math.sin(angle) * 0.12);
+      group.add(petal);
+    }
+
+    // Layer 3: Outer blooming petals (7 lush petals spreading open)
+    const outerPetalGeom = createPetalGeometry(0.48, 0.76, 0.22, 0.30);
     for (let i = 0; i < 7; i++) {
-      const angle = (i * Math.PI * 2) / 7 + 0.6 + Math.random() * 0.15;
-      const petal = new THREE.Mesh(outerGeom, outerMat);
+      const angle = (i * Math.PI * 2) / 7 + 0.65;
+      const petal = new THREE.Mesh(outerPetalGeom, outerMat);
       petal.rotation.y = angle;
-      petal.rotation.x = 0.95 + Math.random() * 0.12;
-      petal.position.set(Math.cos(angle) * 0.22, 0.02, Math.sin(angle) * 0.22);
+      petal.rotation.x = 0.88; // opening outward at ~50 deg
+      petal.position.set(Math.cos(angle) * 0.22, 0.04, Math.sin(angle) * 0.22);
       group.add(petal);
     }
 
-    group.scale.set(0.65, 0.65, 0.65);
+    group.scale.set(0.68, 0.68, 0.68);
     return group;
   }
 
+  /**
+   * Builds an authentic Sakura cherry blossom with 5 heart-notched petals and golden stamens.
+   */
   function buildSakura(colorHex) {
     const group = new THREE.Group();
     const petalColor = new THREE.Color(colorHex);
 
     const petalMat = new THREE.MeshPhysicalMaterial({
       color: petalColor,
-      roughness: 0.3,
-      clearcoat: 0.45,
-      clearcoatRoughness: 0.1,
+      roughness: 0.26,
+      clearcoat: 0.60,
+      clearcoatRoughness: 0.10,
       side: THREE.DoubleSide
     });
 
-    // 5 heart-like petals
-    const petalGeom = createPetalGeometry(0.38, 0.68, 0.1);
+    // 5 notched Sakura petals radiating outward
+    const petalGeom = createPetalGeometry(0.34, 0.68, 0.14, 0.18, true);
     for (let i = 0; i < 5; i++) {
       const angle = (i * Math.PI * 2) / 5;
       const petal = new THREE.Mesh(petalGeom, petalMat);
       petal.rotation.y = angle;
-      petal.rotation.x = 1.25; // splayed open
-      petal.position.set(Math.cos(angle) * 0.08, 0.02, Math.sin(angle) * 0.08);
+      petal.rotation.x = 1.38; // gently spread open, cupped upward
+      petal.position.set(Math.cos(angle) * 0.08, 0.03, Math.sin(angle) * 0.08);
       group.add(petal);
     }
 
-    // Center stamen button & golden pistils
-    const centerGeom = new THREE.SphereGeometry(0.08, 12, 8);
-    const centerMat = new THREE.MeshStandardMaterial({ color: 0xFDE68A, roughness: 0.4 });
+    // Warm golden-honey center button
+    const centerGeom = new THREE.SphereGeometry(0.09, 16, 12);
+    const centerMat = new THREE.MeshStandardMaterial({ color: 0xF59E0B, roughness: 0.35 });
     const center = new THREE.Mesh(centerGeom, centerMat);
-    center.position.y = 0.06;
+    center.scale.set(1.1, 0.6, 1.1);
+    center.position.y = 0.05;
     group.add(center);
 
-    // Fine stamen filaments
-    const stamenMat = new THREE.MeshBasicMaterial({ color: 0xD97706 });
-    for (let i = 0; i < 8; i++) {
-      const angle = (i * Math.PI * 2) / 8;
-      const tipGeom = new THREE.SphereGeometry(0.025, 6, 6);
-      const tip = new THREE.Mesh(tipGeom, stamenMat);
-      tip.position.set(Math.cos(angle) * 0.1, 0.11, Math.sin(angle) * 0.1);
+    // 10 fine stamen filaments with golden pearl tips
+    const stamenTipMat = new THREE.MeshStandardMaterial({ color: 0xD97706, roughness: 0.3, metalness: 0.2 });
+    for (let i = 0; i < 10; i++) {
+      const angle = (i * Math.PI * 2) / 10;
+      const filamentGeom = new THREE.CylinderGeometry(0.008, 0.008, 0.12, 5);
+      const filament = new THREE.Mesh(filamentGeom, centerMat);
+      filament.position.set(Math.cos(angle) * 0.08, 0.09, Math.sin(angle) * 0.08);
+      filament.rotation.z = Math.cos(angle) * -0.3;
+      filament.rotation.x = Math.sin(angle) * 0.3;
+      group.add(filament);
+
+      const tipGeom = new THREE.SphereGeometry(0.022, 8, 8);
+      const tip = new THREE.Mesh(tipGeom, stamenTipMat);
+      tip.position.set(Math.cos(angle) * 0.11, 0.15, Math.sin(angle) * 0.11);
       group.add(tip);
     }
 
@@ -266,115 +340,145 @@
     return group;
   }
 
+  /**
+   * Builds a radiant Daisy with a golden-honey cushion floret and 24 radiating smooth petals.
+   */
   function buildDaisy(colorHex) {
     const group = new THREE.Group();
     const petalColor = new THREE.Color(colorHex);
 
     const petalMat = new THREE.MeshPhysicalMaterial({
       color: petalColor,
-      roughness: 0.35,
-      clearcoat: 0.25,
+      roughness: 0.30,
+      clearcoat: 0.45,
       side: THREE.DoubleSide
     });
 
-    // Central golden disk floret
-    const diskGeom = new THREE.CylinderGeometry(0.24, 0.22, 0.12, 24);
+    // Central rounded honey-amber floret cushion
+    const diskGeom = new THREE.SphereGeometry(0.24, 24, 16);
     const diskMat = new THREE.MeshStandardMaterial({
       color: 0xF59E0B,
-      roughness: 0.6,
+      roughness: 0.55,
       metalness: 0.05
     });
     const disk = new THREE.Mesh(diskGeom, diskMat);
-    disk.position.y = 0.05;
+    disk.scale.set(1.0, 0.35, 1.0);
+    disk.position.y = 0.06;
     group.add(disk);
 
-    // 16 slender radiating petals
-    const petalCount = 16;
-    const petalGeom = createPetalGeometry(0.14, 0.72, 0.06);
-    for (let i = 0; i < petalCount; i++) {
-      const angle = (i * Math.PI * 2) / petalCount + (Math.random() - 0.5) * 0.05;
+    // Two interleaved tiers of smooth slender petals
+    const petalGeom = createPetalGeometry(0.12, 0.72, 0.08, 0.14);
+    const tier1Count = 12;
+    for (let i = 0; i < tier1Count; i++) {
+      const angle = (i * Math.PI * 2) / tier1Count;
       const petal = new THREE.Mesh(petalGeom, petalMat);
       petal.rotation.y = angle;
-      petal.rotation.x = 1.35 + (Math.random() - 0.5) * 0.08;
-      petal.position.set(Math.cos(angle) * 0.2, 0.03, Math.sin(angle) * 0.2);
+      petal.rotation.x = 1.35; // radiating outward
+      petal.position.set(Math.cos(angle) * 0.18, 0.03, Math.sin(angle) * 0.18);
       group.add(petal);
     }
 
-    group.scale.set(0.7, 0.7, 0.7);
+    const tier2Count = 12;
+    for (let i = 0; i < tier2Count; i++) {
+      const angle = (i * Math.PI * 2) / tier2Count + (Math.PI / tier2Count);
+      const petal = new THREE.Mesh(petalGeom, petalMat);
+      petal.rotation.y = angle;
+      petal.rotation.x = 1.42; // slightly lower tier
+      petal.position.set(Math.cos(angle) * 0.20, 0.02, Math.sin(angle) * 0.20);
+      group.add(petal);
+    }
+
+    group.scale.set(0.72, 0.72, 0.72);
     return group;
   }
 
+  /**
+   * Builds an airy Baby's Breath spray with delicate branching stems and puffy pearl florets.
+   */
   function buildBabyBreath() {
     const group = new THREE.Group();
 
     // Stem material
-    const stemMat = new THREE.MeshStandardMaterial({ color: 0x6E9355, roughness: 0.5 });
-    const stemGeom = new THREE.CylinderGeometry(0.02, 0.02, 0.45, 6);
+    const stemMat = new THREE.MeshStandardMaterial({ color: 0x5C8045, roughness: 0.5 });
 
-    // Main stem
-    const mainStem = new THREE.Mesh(stemGeom, stemMat);
-    mainStem.position.y = 0.22;
-    group.add(mainStem);
-
-    // Delicate airy florets
+    // Pearly white floret material
     const floretMat = new THREE.MeshPhysicalMaterial({
-      color: 0xFCFAF7,
-      roughness: 0.35,
-      clearcoat: 0.4
+      color: 0xFFFDFB,
+      roughness: 0.25,
+      clearcoat: 0.6,
+      clearcoatRoughness: 0.1
     });
 
-    const floretGeom = new THREE.DodecahedronGeometry(0.065, 1);
     const branchOffsets = [
-      [0.14, 0.38, 0.05],
-      [-0.14, 0.35, -0.06],
-      [0.05, 0.46, 0.12],
-      [-0.07, 0.42, 0.1],
-      [0.08, 0.44, -0.12],
-      [0, 0.52, 0],
-      [0.18, 0.28, -0.08],
-      [-0.18, 0.26, 0.08]
+      [0.00, 0.36, 0.00],
+      [0.15, 0.30, 0.08],
+      [-0.14, 0.28, -0.06],
+      [0.08, 0.32, -0.14],
+      [-0.08, 0.29, 0.14],
+      [0.18, 0.22, -0.08],
+      [-0.18, 0.21, 0.07],
+      [0.05, 0.24, 0.16]
     ];
 
     branchOffsets.forEach(([bx, by, bz]) => {
       // Sub-stem
-      const subStem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.2, 5), stemMat);
-      subStem.position.set(bx * 0.6, by * 0.7, bz * 0.6);
+      const len = Math.hypot(bx, by, bz);
+      const subStem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.015, len, 6), stemMat);
+      subStem.position.set(bx * 0.5, by * 0.5, bz * 0.5);
       subStem.lookAt(bx, by, bz);
+      subStem.rotateX(Math.PI / 2);
       group.add(subStem);
 
-      // Fluffy floret
-      const floret = new THREE.Mesh(floretGeom, floretMat);
-      floret.position.set(bx, by, bz);
-      group.add(floret);
+      // Cute spherical floret with subtle mini-petal cluster
+      const floretGroup = new THREE.Group();
+      floretGroup.position.set(bx, by, bz);
+
+      const centerBerry = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 10), floretMat);
+      floretGroup.add(centerBerry);
+
+      // 4 tiny rounded micro-petals
+      const microGeom = new THREE.SphereGeometry(0.025, 8, 6);
+      for (let p = 0; p < 4; p++) {
+        const pAng = (p * Math.PI) / 2;
+        const micro = new THREE.Mesh(microGeom, floretMat);
+        micro.position.set(Math.cos(pAng) * 0.035, 0, Math.sin(pAng) * 0.035);
+        floretGroup.add(micro);
+      }
+
+      group.add(floretGroup);
     });
 
-    group.scale.set(0.8, 0.8, 0.8);
+    group.scale.set(0.85, 0.85, 0.85);
     return group;
   }
 
+  /**
+   * Builds a fresh botanical leaf sprig with smooth curved contours and natural arching.
+   */
   function buildLeaf() {
     const group = new THREE.Group();
     const leafMat = new THREE.MeshPhysicalMaterial({
-      color: 0x507C3B,
-      roughness: 0.35,
-      clearcoat: 0.4,
+      color: 0x3E6B2C,
+      roughness: 0.30,
+      clearcoat: 0.65,
+      clearcoatRoughness: 0.12,
       side: THREE.DoubleSide
     });
 
-    // Two curved leaves side by side
-    const leafGeom1 = createPetalGeometry(0.28, 0.85, 0.16);
+    // Two lush botanical leaves radiating gracefully
+    const leafGeom1 = createPetalGeometry(0.26, 0.85, 0.18, 0.25);
     const leaf1 = new THREE.Mesh(leafGeom1, leafMat);
-    leaf1.rotation.set(1.1, 0.4, -0.2);
-    leaf1.position.set(0.08, 0.02, 0);
+    leaf1.rotation.set(1.25, 0.35, -0.2);
+    leaf1.position.set(0.06, 0.02, 0);
     group.add(leaf1);
 
-    const leafGeom2 = createPetalGeometry(0.24, 0.72, 0.14);
+    const leafGeom2 = createPetalGeometry(0.22, 0.72, 0.16, 0.22);
     const leaf2 = new THREE.Mesh(leafGeom2, leafMat);
-    leaf2.rotation.set(1.2, -0.5, 0.3);
+    leaf2.rotation.set(1.30, -0.55, 0.25);
     leaf2.position.set(-0.06, 0.02, 0.04);
     group.add(leaf2);
 
-    group.scale.set(0.8, 0.8, 0.8);
+    group.scale.set(0.85, 0.85, 0.85);
     return group;
   }
 
@@ -463,14 +567,11 @@
     // 3. Pudding Mesh
     const puddingGeom = createPuddingGeometry();
     const puddingMat = new THREE.MeshPhysicalMaterial({
-      color: 0x3A1B12, // Rich chocolate glaze
-      roughness: 0.16,
-      metalness: 0.04,
+      color: 0x35170E, // Decadent dark chocolate glaze
+      roughness: 0.18,
+      metalness: 0.02,
       clearcoat: 0.95,
-      clearcoatRoughness: 0.08,
-      reflectivity: 0.8,
-      transmission: 0.04,
-      ior: 1.48
+      clearcoatRoughness: 0.06
     });
     const puddingMesh = new THREE.Mesh(puddingGeom, puddingMat);
     puddingMesh.castShadow = true;
@@ -501,23 +602,23 @@
     const flowerGroup = new THREE.Group();
     scene.add(flowerGroup);
 
-    // Pre-place 3 delicate starter flowers to immediately showcase the visual
+    // Pre-place 3 delicate starter flowers on the solid chocolate crown
     const starterRose = createFlowerInstance('rose', '#FAF7F5');
-    starterRose.position.set(0.1, 2.22, 0.2);
-    starterRose.rotation.set(-0.2, 0.5, 0.1);
+    starterRose.position.set(0.12, 2.24, 0.18);
+    starterRose.rotation.set(-0.15, 0.45, 0.08);
     starterRose.scale.set(0.7, 0.7, 0.7);
     flowerGroup.add(starterRose);
 
     const starterSakura = createFlowerInstance('sakura', '#F4A7B9');
-    starterSakura.position.set(0.8, 2.05, 0.6);
-    starterSakura.rotation.set(-0.4, 1.2, 0.3);
+    starterSakura.position.set(0.72, 2.12, 0.62);
+    starterSakura.rotation.set(-0.35, 1.15, 0.25);
     starterSakura.scale.set(0.65, 0.65, 0.65);
     flowerGroup.add(starterSakura);
 
     const starterLeaf = createFlowerInstance('leaf', '#507C3B');
-    starterLeaf.position.set(-0.4, 2.15, -0.1);
-    starterLeaf.rotation.set(0.3, -1.1, -0.2);
-    starterLeaf.scale.set(0.6, 0.6, 0.6);
+    starterLeaf.position.set(-0.45, 2.18, -0.15);
+    starterLeaf.rotation.set(0.28, -1.05, -0.18);
+    starterLeaf.scale.set(0.65, 0.65, 0.65);
     flowerGroup.add(starterLeaf);
 
     state.placedFlowers.push(starterRose, starterSakura, starterLeaf);
@@ -778,10 +879,11 @@
     // Mini Pudding
     const puddingGeom = createPuddingGeometry();
     const puddingMat = new THREE.MeshPhysicalMaterial({
-      color: 0x3A1B12,
-      roughness: 0.16,
+      color: 0x35170E,
+      roughness: 0.18,
+      metalness: 0.02,
       clearcoat: 0.95,
-      clearcoatRoughness: 0.08
+      clearcoatRoughness: 0.06
     });
     const miniPudding = new THREE.Mesh(puddingGeom, puddingMat);
     scene.add(miniPudding);
@@ -795,12 +897,12 @@
 
     // Decorative Rose & Sakura on top
     const rose = buildRose('#FAF7F5');
-    rose.position.set(0, 2.22, 0.2);
+    rose.position.set(0.08, 2.24, 0.15);
     rose.scale.set(0.65, 0.65, 0.65);
     scene.add(rose);
 
     const sakura = buildSakura('#F4A7B9');
-    sakura.position.set(0.65, 2.05, 0.55);
+    sakura.position.set(0.68, 2.12, 0.52);
     sakura.scale.set(0.6, 0.6, 0.6);
     scene.add(sakura);
 

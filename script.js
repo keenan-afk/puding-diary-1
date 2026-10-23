@@ -1154,6 +1154,142 @@ No. Telepon: ${telepon}`;
   }
 
   /* ==========================================================================
+     5B. TESTIMONIAL LIGHTBOX MODAL
+     ========================================================================== */
+
+  function initTestimonialLightbox() {
+    const lightbox = document.getElementById('testi-lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
+    const lightboxCaption = document.getElementById('lightbox-caption');
+    const closeBtn = document.getElementById('lightbox-close-btn');
+    const prevBtn = document.getElementById('lightbox-prev-btn');
+    const nextBtn = document.getElementById('lightbox-next-btn');
+
+    if (!lightbox || !lightboxImg || !lightboxCaption) return;
+
+    // Collect all cards and zoom buttons
+    const cards = Array.from(document.querySelectorAll('.testi-card'));
+    if (cards.length === 0) return;
+
+    const items = cards.map((card) => {
+      const zoomBtn = card.querySelector('.testi-zoom-btn');
+      const img = card.querySelector('.testi-img');
+      const fullSrc = zoomBtn ? zoomBtn.dataset.full : (img ? img.src : '');
+      const caption = zoomBtn ? zoomBtn.dataset.caption : (img ? img.alt : '');
+      return { fullSrc, caption, triggerBtn: zoomBtn || card };
+    });
+
+    let currentIndex = 0;
+    let lastActiveElement = null;
+
+    function openLightbox(index) {
+      if (index < 0 || index >= items.length) return;
+      lastActiveElement = document.activeElement;
+      currentIndex = index;
+      updateLightboxContent();
+
+      lightbox.classList.add('active');
+      lightbox.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+
+      if (closeBtn) closeBtn.focus();
+    }
+
+    function updateLightboxContent() {
+      const item = items[currentIndex];
+      lightboxImg.src = item.fullSrc;
+      lightboxImg.alt = item.caption;
+      lightboxCaption.textContent = item.caption;
+
+      if (prevBtn) prevBtn.setAttribute('aria-label', `Foto sebelumnya (${currentIndex + 1} dari ${items.length})`);
+      if (nextBtn) nextBtn.setAttribute('aria-label', `Foto berikutnya (${currentIndex + 1} dari ${items.length})`);
+    }
+
+    function closeLightbox() {
+      lightbox.classList.remove('active');
+      lightbox.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      lightboxImg.src = '';
+
+      if (lastActiveElement && typeof lastActiveElement.focus === 'function') {
+        lastActiveElement.focus();
+      }
+    }
+
+    function showPrev() {
+      currentIndex = (currentIndex - 1 + items.length) % items.length;
+      updateLightboxContent();
+    }
+
+    function showNext() {
+      currentIndex = (currentIndex + 1) % items.length;
+      updateLightboxContent();
+    }
+
+    // Attach click events on cards & zoom buttons
+    cards.forEach((card, idx) => {
+      const zoomBtn = card.querySelector('.testi-zoom-btn');
+      const mediaWrap = card.querySelector('.testi-media-wrap');
+
+      if (zoomBtn) {
+        zoomBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openLightbox(idx);
+        });
+      }
+
+      if (mediaWrap) {
+        mediaWrap.addEventListener('click', () => {
+          openLightbox(idx);
+        });
+      }
+    });
+
+    // Close button
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeLightbox);
+    }
+
+    // Navigation buttons
+    if (prevBtn) {
+      prevBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showPrev();
+      });
+    }
+
+    if (nextBtn) {
+      nextBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showNext();
+      });
+    }
+
+    // Backdrop click
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox) {
+        closeLightbox();
+      }
+    });
+
+    // Keyboard support: Escape, ArrowLeft, ArrowRight
+    window.addEventListener('keydown', (e) => {
+      if (!lightbox.classList.contains('active')) return;
+
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeLightbox();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        showPrev();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        showNext();
+      }
+    });
+  }
+
+  /* ==========================================================================
      6. INITIALIZATION RUNNER
      ========================================================================== */
 
@@ -1162,6 +1298,7 @@ No. Telepon: ${telepon}`;
     initHeroMiniPreview();
     initStudioControls();
     initRegistrationModal();
+    initTestimonialLightbox();
   });
 
 })();

@@ -51,10 +51,10 @@
   --radius-full: 9999px;
   
   /* Elevation Shadows (Soft natural ambient light) */
-  --shadow-subtle: 0 2px 8px rgba(78, 42, 30, 0.05);
-  --shadow-card: 0 8px 24px rgba(78, 42, 30, 0.07), 0 2px 6px rgba(78, 42, 30, 0.03);
-  --shadow-hover: 0 14px 32px rgba(78, 42, 30, 0.11), 0 4px 10px rgba(78, 42, 30, 0.04);
-  --shadow-modal: 0 24px 60px rgba(45, 28, 27, 0.22), 0 8px 20px rgba(45, 28, 27, 0.08);
+  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.07), 0 2px 6px rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 14px 32px rgba(0, 0, 0, 0.11), 0 4px 10px rgba(0, 0, 0, 0.04);
+  --shadow-modal: 0 24px 60px rgba(0, 0, 0, 0.22), 0 8px 20px rgba(0, 0, 0, 0.08);
   
   /* Transitions */
   --trans-fast: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
@@ -195,13 +195,13 @@ p {
 .btn-primary {
   background-color: var(--color-primary);
   color: var(--color-text-inverse);
-  box-shadow: 0 4px 14px rgba(155, 51, 76, 0.28);
+  box-shadow: 0 4px 12px rgba(45, 28, 27, 0.16);
 }
 
 .btn-primary:hover {
   background-color: var(--color-primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(155, 51, 76, 0.36);
+  box-shadow: 0 6px 18px rgba(45, 28, 27, 0.22);
 }
 
 .btn-primary:active {
@@ -769,7 +769,8 @@ p {
 .flower-choice-btn.active {
   background-color: #FFF;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary-light);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
 }
 
 .flower-name {
@@ -803,7 +804,8 @@ p {
 
 .color-swatch-btn.active {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary);
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
   transform: scale(1.08);
 }
 
@@ -897,6 +899,376 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 
 
+/* --- 9B. SECTION 3: TESTIMONI ALUMNI --- */
+.testimonials-section {
+  padding: var(--space-4xl) var(--space-lg);
+  background: linear-gradient(180deg, var(--color-bg) 0%, var(--color-surface) 40%, var(--color-surface) 70%, var(--color-bg) 100%);
+  position: relative;
+}
+
+.testimonials-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.testimonials-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-xl);
+  margin-top: var(--space-2xl);
+}
+
+@media (min-width: 640px) {
+  .testimonials-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .testimonials-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* Center the last two cards in a balanced layout */
+  .testimonials-grid > :nth-child(4) {
+    grid-column: 1 / 2;
+  }
+}
+
+.testi-card {
+  background-color: #FFFFFF;
+  border: 2px solid var(--color-card-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--trans-smooth), box-shadow var(--trans-smooth), border-color var(--trans-smooth);
+}
+
+.testi-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--color-primary);
+}
+
+.testi-media-wrap {
+  position: relative;
+  width: 100%;
+  height: 380px;
+  background-color: #0B141A; /* WhatsApp dark mode surface */
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.testi-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.testi-media-wrap:hover .testi-img {
+  transform: scale(1.04);
+}
+
+.testi-zoom-btn {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  background-color: rgba(18, 22, 25, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--trans-fast), transform var(--trans-fast);
+}
+
+.testi-zoom-btn:hover {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  transform: scale(1.05);
+}
+
+.testi-zoom-btn:focus-visible {
+  outline: 3px solid #FFFFFF;
+  outline-offset: 2px;
+}
+
+.testi-body {
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  flex: 1;
+}
+
+.testi-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+}
+
+.testi-tag {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.testi-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.testi-quote {
+  font-size: 1.05rem;
+  font-style: italic;
+  color: var(--color-accent-choco);
+  line-height: 1.55;
+  padding-left: var(--space-sm);
+  border-left: 3px solid var(--color-card-border);
+  margin: 0;
+}
+
+.testi-author {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: auto;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-card-border);
+}
+
+.testi-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-subtle);
+}
+
+.testi-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.testi-name {
+  font-size: 1rem;
+  color: var(--color-text-main);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.testi-status {
+  font-size: 0.825rem;
+  color: var(--color-text-muted);
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+/* Trust Summary Banner */
+.testi-summary-banner {
+  margin-top: var(--space-3xl);
+  background-color: #FFFFFF;
+  border: 2px dashed var(--color-card-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl) var(--space-lg);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-around;
+  gap: var(--space-lg);
+  box-shadow: var(--shadow-subtle);
+  text-align: center;
+}
+
+.testi-summary-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.testi-stat-number {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--color-primary);
+  line-height: 1.2;
+}
+
+.testi-stat-label {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.testi-summary-divider {
+  display: none;
+  width: 1px;
+  height: 40px;
+  background-color: var(--color-card-border);
+}
+
+@media (min-width: 768px) {
+  .testi-summary-divider {
+    display: block;
+  }
+}
+
+/* --- LIGHTBOX OVERLAY --- */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background-color: rgba(16, 9, 8, 0.90);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+  opacity: 0;
+  transition: opacity var(--trans-fast);
+}
+
+.lightbox-overlay.active {
+  display: flex;
+  opacity: 1;
+}
+
+.lightbox-dialog {
+  position: relative;
+  max-width: 600px;
+  width: 100%;
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lightbox-close-btn {
+  position: absolute;
+  top: -46px;
+  right: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color var(--trans-fast), transform var(--trans-fast);
+}
+
+.lightbox-close-btn:hover {
+  background-color: var(--color-primary);
+  transform: scale(1.1);
+}
+
+.lightbox-close-btn:focus-visible {
+  outline: 3px solid #FFFFFF;
+  outline-offset: 2px;
+}
+
+.lightbox-img-wrap {
+  width: 100%;
+  max-height: 74vh;
+  background-color: #0B141A;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.lightbox-img {
+  width: auto;
+  max-width: 100%;
+  max-height: 74vh;
+  object-fit: contain;
+  display: block;
+}
+
+.lightbox-caption-bar {
+  margin-top: var(--space-md);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  color: #FFFFFF;
+  padding: 0 var(--space-xs);
+}
+
+.lightbox-caption {
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #FFF2F4;
+}
+
+.lightbox-nav-btns {
+  display: flex;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+.lightbox-nav-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color var(--trans-fast), transform var(--trans-fast);
+}
+
+.lightbox-nav-btn:hover {
+  background-color: var(--color-primary);
+  transform: scale(1.1);
+}
+
+.lightbox-nav-btn:focus-visible {
+  outline: 3px solid #FFFFFF;
+  outline-offset: 2px;
+}
+
 /* --- 10. SECTION 4: CTA PENUTUP --- */
 .closing-section {
   padding: var(--space-3xl) var(--space-lg) var(--space-4xl);
@@ -972,7 +1344,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   -webkit-backdrop-filter: blur(8px);
   border-top: 1px solid var(--color-card-border);
   padding: 10px var(--space-md);
-  box-shadow: 0 -4px 16px rgba(78, 42, 30, 0.08);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
 }
 
 @media (min-width: 768px) {
@@ -1210,9 +1582,9 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .form-input:focus {
-  outline: none;
+  outline: 3px solid var(--color-primary);
+  outline-offset: 1px;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-light);
 }
 
 .form-group.has-error .form-input {

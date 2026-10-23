@@ -986,6 +986,7 @@
     const openBtns = document.querySelectorAll('.open-modal-btn');
     const form = document.getElementById('registration-form');
 
+    const inputKelas = document.getElementById('field-kelas');
     const inputNama = document.getElementById('field-nama');
     const inputKota = document.getElementById('field-kota');
     const inputTelepon = document.getElementById('field-telepon');
@@ -1000,6 +1001,12 @@
 
     function openModal(triggerElement) {
       previousActiveElement = triggerElement || document.activeElement;
+
+      // Pre-select class if trigger specifies one
+      if (triggerElement && triggerElement.dataset && triggerElement.dataset.class && inputKelas) {
+        inputKelas.value = triggerElement.dataset.class;
+      }
+
       modal.classList.add('active');
       modal.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
@@ -1094,6 +1101,7 @@
       form.addEventListener('submit', (e) => {
         e.preventDefault();
 
+        const kelas = inputKelas ? inputKelas.value : 'Kelas 3: Paket Bundling (Kelas 1 + 2)';
         const nama = inputNama ? inputNama.value.trim() : '';
         const kota = inputKota ? inputKota.value.trim() : '';
         let telepon = inputTelepon ? inputTelepon.value.trim() : '';
@@ -1134,9 +1142,10 @@
 
         if (!isValid) return;
 
-        // Build WhatsApp Message (exact requested template)
+        // Build WhatsApp Message (structured with selected class)
         const messageText = 
 `Halo Puding Diary, saya ingin daftar kelas puding.
+Pilihan: ${kelas}
 Nama: ${nama}
 Kota: ${kota}
 No. Telepon: ${telepon}`;

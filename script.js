@@ -1174,18 +1174,17 @@ No. Telepon: ${telepon}`;
     const prevBtn = document.getElementById('lightbox-prev-btn');
     const nextBtn = document.getElementById('lightbox-next-btn');
 
-    if (!lightbox || !lightboxImg || !lightboxCaption) return;
+    if (!lightbox || !lightboxImg) return;
 
-    // Collect all cards and zoom buttons
+    // Collect all cards
     const cards = Array.from(document.querySelectorAll('.testi-card'));
     if (cards.length === 0) return;
 
     const items = cards.map((card) => {
-      const zoomBtn = card.querySelector('.testi-zoom-btn');
       const img = card.querySelector('.testi-img');
-      const fullSrc = zoomBtn ? zoomBtn.dataset.full : (img ? img.src : '');
-      const caption = zoomBtn ? zoomBtn.dataset.caption : (img ? img.alt : '');
-      return { fullSrc, caption, triggerBtn: zoomBtn || card };
+      const fullSrc = img ? img.src : '';
+      const caption = img ? img.alt : '';
+      return { fullSrc, caption, triggerBtn: card };
     });
 
     let currentIndex = 0;
@@ -1206,9 +1205,12 @@ No. Telepon: ${telepon}`;
 
     function updateLightboxContent() {
       const item = items[currentIndex];
+      if (!item) return;
       lightboxImg.src = item.fullSrc;
-      lightboxImg.alt = item.caption;
-      lightboxCaption.textContent = item.caption;
+      lightboxImg.alt = item.caption || 'Bukti foto testimoni alumni Puding Diary';
+      if (lightboxCaption) {
+        lightboxCaption.textContent = item.caption || '';
+      }
 
       if (prevBtn) prevBtn.setAttribute('aria-label', `Foto sebelumnya (${currentIndex + 1} dari ${items.length})`);
       if (nextBtn) nextBtn.setAttribute('aria-label', `Foto berikutnya (${currentIndex + 1} dari ${items.length})`);
@@ -1235,23 +1237,18 @@ No. Telepon: ${telepon}`;
       updateLightboxContent();
     }
 
-    // Attach click events on cards & zoom buttons
+    // Attach click and keyboard events on cards
     cards.forEach((card, idx) => {
-      const zoomBtn = card.querySelector('.testi-zoom-btn');
-      const mediaWrap = card.querySelector('.testi-media-wrap');
+      card.addEventListener('click', () => {
+        openLightbox(idx);
+      });
 
-      if (zoomBtn) {
-        zoomBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
           openLightbox(idx);
-        });
-      }
-
-      if (mediaWrap) {
-        mediaWrap.addEventListener('click', () => {
-          openLightbox(idx);
-        });
-      }
+        }
+      });
     });
 
     // Close button

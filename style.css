@@ -1242,38 +1242,25 @@ input[type="range"]::-webkit-slider-thumb:hover {
 }
 
 .testimonials-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: var(--space-xl);
   margin-top: var(--space-2xl);
 }
 
-@media (min-width: 640px) {
-  .testimonials-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .testimonials-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  /* Center the last two cards in a balanced layout */
-  .testimonials-grid > :nth-child(4) {
-    grid-column: 1 / 2;
-  }
-}
-
 .testi-card {
-  background-color: #FFFFFF;
+  flex: 0 1 340px;
+  max-width: 360px;
+  background-color: #0B141A;
   border: 2px solid var(--color-card-border);
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-card);
-  display: flex;
-  flex-direction: column;
   transition: transform var(--trans-smooth), box-shadow var(--trans-smooth), border-color var(--trans-smooth);
+  cursor: zoom-in;
+  display: block;
+  outline: none;
 }
 
 .testi-card:hover {
@@ -1282,13 +1269,17 @@ input[type="range"]::-webkit-slider-thumb:hover {
   border-color: var(--color-primary);
 }
 
+.testi-card:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
 .testi-media-wrap {
   position: relative;
   width: 100%;
-  height: 380px;
-  background-color: #0B141A; /* WhatsApp dark mode surface */
+  aspect-ratio: 472 / 1024;
+  background-color: #0B141A;
   overflow: hidden;
-  cursor: pointer;
 }
 
 .testi-img {
@@ -1300,176 +1291,8 @@ input[type="range"]::-webkit-slider-thumb:hover {
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.testi-media-wrap:hover .testi-img {
-  transform: scale(1.04);
-}
-
-.testi-zoom-btn {
-  position: absolute;
-  bottom: 14px;
-  right: 14px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: var(--radius-full);
-  background-color: rgba(18, 22, 25, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #FFFFFF;
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color var(--trans-fast), transform var(--trans-fast);
-}
-
-.testi-zoom-btn:hover {
-  background-color: var(--color-primary);
-  border-color: var(--color-primary);
-  transform: scale(1.05);
-}
-
-.testi-zoom-btn:focus-visible {
-  outline: 3px solid #FFFFFF;
-  outline-offset: 2px;
-}
-
-.testi-body {
-  padding: var(--space-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  flex: 1;
-}
-
-.testi-badge-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-xs);
-}
-
-.testi-tag {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--color-primary);
-  background-color: var(--color-primary-light);
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-}
-
-.testi-verified {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--color-success);
-}
-
-.testi-quote {
-  font-size: 1.05rem;
-  font-style: italic;
-  color: var(--color-accent-choco);
-  line-height: 1.55;
-  padding-left: var(--space-sm);
-  border-left: 3px solid var(--color-card-border);
-  margin: 0;
-}
-
-.testi-author {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  margin-top: auto;
-  padding-top: var(--space-sm);
-  border-top: 1px solid var(--color-card-border);
-}
-
-.testi-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
-  color: #FFFFFF;
-  font-weight: 700;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: var(--shadow-subtle);
-}
-
-.testi-meta {
-  display: flex;
-  flex-direction: column;
-}
-
-.testi-name {
-  font-size: 1rem;
-  color: var(--color-text-main);
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.testi-status {
-  font-size: 0.825rem;
-  color: var(--color-text-muted);
-  line-height: 1.3;
-  margin-top: 2px;
-}
-
-/* Trust Summary Banner */
-.testi-summary-banner {
-  margin-top: var(--space-3xl);
-  background-color: #FFFFFF;
-  border: 2px dashed var(--color-card-border);
-  border-radius: var(--radius-xl);
-  padding: var(--space-xl) var(--space-lg);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-around;
-  gap: var(--space-lg);
-  box-shadow: var(--shadow-subtle);
-  text-align: center;
-}
-
-.testi-summary-stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.testi-stat-number {
-  font-family: var(--font-display);
-  font-size: 1.6rem;
-  color: var(--color-primary);
-  line-height: 1.2;
-}
-
-.testi-stat-label {
-  font-size: 0.95rem;
-  color: var(--color-text-muted);
-  font-weight: 500;
-}
-
-.testi-summary-divider {
-  display: none;
-  width: 1px;
-  height: 40px;
-  background-color: var(--color-card-border);
-}
-
-@media (min-width: 768px) {
-  .testi-summary-divider {
-    display: block;
-  }
+.testi-card:hover .testi-img {
+  transform: scale(1.03);
 }
 
 /* --- LIGHTBOX OVERLAY --- */
@@ -1495,7 +1318,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .lightbox-dialog {
   position: relative;
-  max-width: 600px;
+  max-width: 480px;
   width: 100%;
   max-height: 94vh;
   display: flex;
@@ -1532,7 +1355,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .lightbox-img-wrap {
   width: 100%;
-  max-height: 74vh;
+  max-height: 82vh;
   background-color: #0B141A;
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -1546,7 +1369,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .lightbox-img {
   width: auto;
   max-width: 100%;
-  max-height: 74vh;
+  max-height: 82vh;
   object-fit: contain;
   display: block;
 }
@@ -1556,23 +1379,14 @@ input[type="range"]::-webkit-slider-thumb:hover {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
+  justify-content: center;
   color: #FFFFFF;
-  padding: 0 var(--space-xs);
-}
-
-.lightbox-caption {
-  font-size: 0.95rem;
-  font-weight: 500;
-  line-height: 1.4;
-  color: #FFF2F4;
 }
 
 .lightbox-nav-btns {
   display: flex;
-  gap: var(--space-xs);
-  flex-shrink: 0;
+  gap: var(--space-md);
+  align-items: center;
 }
 
 .lightbox-nav-btn {
